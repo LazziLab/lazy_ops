@@ -28,6 +28,7 @@ import numpy as np
 from abc import ABCMeta, abstractmethod
 from typing import Union
 import h5py
+from copy import deepcopy
 
 installed_dataset_types = h5py.Dataset
 
@@ -374,6 +375,16 @@ class DatasetView(metaclass=ABCMeta):
 
         self.dataset.read_direct(reversed_dest, source_sel=reversed_slice_key, dest_sel=reversed_dest_sel)
         np.copyto(dest, reversed_dest.transpose(axis_order_read))
+
+    def __deepcopy__(self, memo):
+        """ Allow deep copying of data to new object
+        """
+        cls = self.__class__
+        result = cls.__new__(cls, self._dataset)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+            setattr(result, k, deepcopy(v, memo))
+        return result
 
 
 def lazy_transpose(dset: installed_dataset_types, axes=None):
